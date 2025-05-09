@@ -101,10 +101,20 @@ Developed by **AD Fund Management LP**.
 # Input controls
 ###############################################################################
 col1, col2 = st.columns([2, 1])
+
 with col1:
     ticker = st.text_input("Enter ticker symbol", value="^GSPC").upper()
+
 with col2:
     top_n = st.slider("Top N analog years", 1, 10, 5)
+    min_corr = st.slider(
+        "Correlation cutoff (ρ)",   # appears immediately below
+        0.00,                       # min
+        1.00,                       # max
+        0.00,                       # default (0 =no filter)
+        0.05,                       # step
+        format="%.2f",
+    )
 
 ###############################################################################
 # Helper functions
