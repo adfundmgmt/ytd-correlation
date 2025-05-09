@@ -175,7 +175,17 @@ st.markdown(
 ###############################################################################
 # Plot
 ###############################################################################
-palette = plt.cm.Set2(np.linspace(0, 1, max(top_n, 1)))
+# ------------------------------------------------------------------
+# Palette: vivid, high-contrast colours
+# ------------------------------------------------------------------
+if top_n <= 10:
+    base_cmap = plt.cm.get_cmap("tab10")
+else:                       # 11-20 analog years
+    base_cmap = plt.cm.get_cmap("tab20")
+
+palette = base_cmap(np.linspace(0, 1, top_n))
+
+# Now start the plot
 fig, ax = plt.subplots(figsize=(14, 7))
 
 # Current-year trace
