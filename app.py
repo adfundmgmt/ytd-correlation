@@ -266,6 +266,30 @@ ax.grid(True, linestyle=":", linewidth=0.6)
 ax.yaxis.set_major_locator(MultipleLocator(0.05))
 ax.yaxis.set_major_formatter(FuncFormatter(lambda y, _: f"{y:.0%}"))
 
+# existing code (keep)
+ax.yaxis.set_major_locator(MultipleLocator(0.05))
+ax.yaxis.set_major_formatter(FuncFormatter(lambda y, _: f"{y:.0%}"))
+
+# Add a lower x-axis that shows calendar months
+year_dates   = raw.loc[raw.index.year == current_year]               # all trading dates this year
+month_starts = year_dates.groupby(year_dates.index.month).head(1)    # first trading day of each month
+month_pos    = month_starts.index.dayofyear                          # positions on x-axis
+month_labels = month_starts.index.strftime("%b")                     # Jan, Feb, …
+
+ax2 = ax.twiny()                             # create a twin x-axis
+ax2.set_xlim(ax.get_xlim())                  # align with main axis
+ax2.set_xticks(month_pos)
+ax2.set_xticklabels(month_labels, fontsize=9)
+
+ax2.xaxis.set_ticks_position("bottom")       # move it below the main axis
+ax2.xaxis.set_label_position("bottom")
+ax2.spines["bottom"].set_position(("outward", 36))  # 36-point offset
+ax2.set_xlabel("Month", labelpad=8)
+
+ax.legend(loc="upper left", fontsize=9, frameon=False)
+st.pyplot(fig)
+
+
 ax.legend(loc="upper left", fontsize=9, frameon=False)
 st.pyplot(fig)
 
