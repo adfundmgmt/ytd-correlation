@@ -54,25 +54,48 @@ st.markdown(
 ###############################################################################
 # Sidebar – usage guide
 ###############################################################################
+# ───────────────────────────────────────────────────────── Sidebar ──
 with st.sidebar:
-    st.title("How to Use This Tool")
+    st.title("How to Use This Tool")      # keep the sidebar header
+
     st.markdown(
         """
-        This dashboard compares any ticker’s **year-to-date (YTD)** performance
-        with prior years, ranked by the correlation of daily return paths.
+This dashboard compares the **current year-to-date (YTD) performance** of a
+chosen ticker (e.g., S&P 500 or Nasdaq) with prior years, based on
+**correlation of daily return paths**.
 
-        **Steps**
+---
 
-        1. Enter a ticker  
-        2. Adjust *Top N analog years*  
-        3. Read the chart  
-           • Black line = current year  
-           • Dashed lines = historical analogs  
-           • Legend shows correlation (ρ)
+### 🔧 Steps:
 
-        Built by AD Fund Management LP.
+1. **Enter a ticker**  
+   Examples:  
+   - `^GSPC` (S&P 500)  
+   - `^IXIC` (Nasdaq Composite)  
+   - `AAPL`, `TSLA`, etc.
+
+2. **Adjust the Top N slider**  
+   This selects how many past years to overlay based on similarity to the
+   current year.
+
+3. **Interpret the chart**  
+   - **Black line** = current year's YTD path  
+   - **Dashed lines** = top-correlated historical years  
+   - **Legend** shows correlation coefficients (ρ)
+
+---
+
+### 💡 Tip
+This tool is useful for:
+- Identifying analog years
+- Market-narrative framing
+- Back-testing
+
+Developed by **AD Fund Management LP**.
         """
     )
+# ────────────────────────────────────────────────────────────────────
+
 
 ###############################################################################
 # Input controls
@@ -228,7 +251,7 @@ st.markdown(
     """
     <hr style='margin-top:50px;margin-bottom:10px;'>
     <div style='text-align:center;color:gray;font-size:13px;'>
-        © 2025 AD Fund Management LP — Built with pride in New York
+        © 2025 AD Fund Management LP
     </div>
     """,
     unsafe_allow_html=True,
