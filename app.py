@@ -67,8 +67,15 @@ for year, group in hist.groupby('Year'):
 ytd_df = pd.DataFrame(ytd_returns_by_year)
 current_year = datetime.datetime.now().year
 if current_year not in ytd_df.columns or ytd_df[current_year].dropna().empty:
-    st.warning(f"No YTD return data found for **{ticker.upper()}** in {current_year}. Try a different symbol (e.g. ^GSPC or AAPL).")
-    st.stop()
+    valid_years = [y for y in sorted(ytd_df.columns, reverse=True) if ytd_df[y].dropna().size > 30]
+    if valid_years:
+        fallback_year = valid_years[0]
+        st.info(f"No YTD data found for {current_year}. Showing data for {fallback_year} instead.")
+        current_year = fallback_year
+    else:
+        st.error(f"No YTD return data available for {ticker.upper()}.")
+        st.stop()
+
 
 current_ytd = ytd_df[current_year].dropna()
 correlations = {}
