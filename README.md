@@ -1,7 +1,1 @@
-requirements.txt
-
-streamlit
-yfinance
-pandas
-matplotlib
-numpy
+THIS WILL BE UPDATED
