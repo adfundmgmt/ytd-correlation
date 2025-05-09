@@ -1,6 +1,12 @@
 import streamlit as st
+import yfinance as yf
+import pandas as pd
+import numpy as np
+import datetime
+import matplotlib.pyplot as plt
+from matplotlib.ticker import MultipleLocator, FuncFormatter
 
-# Page and Sidebar Setup
+# Must be FIRST Streamlit command
 st.set_page_config(page_title="YTD Correlation Dashboard", layout="wide")
 
 with st.sidebar:
@@ -35,18 +41,9 @@ This tool is useful for:
 - Market narrative framing
 - Backtesting
 
-
-Developed by **AD Fund Management**.
+Developed by **AD Fund Management LP**.
 """)
 
-import yfinance as yf
-import pandas as pd
-import numpy as np
-import datetime
-import matplotlib.pyplot as plt
-from matplotlib.ticker import MultipleLocator, FuncFormatter
-
-st.set_page_config(layout="wide")
 st.title("📈 YTD Analog Year Correlation Explorer")
 
 # === Inputs ===
