@@ -107,14 +107,17 @@ with col1:
 
 with col2:
     top_n = st.slider("Top N analog years", 1, 10, 5)
-    min_corr = st.slider(
-        "Correlation cutoff (ρ)",   # appears immediately below
-        0.00,                       # min
-        1.00,                       # max
-        0.00,                       # default (0 =no filter)
-        0.05,                       # step
-        format="%.2f",
-    )
+
+# NEW: cutoff slider placed right below the two-column row
+min_corr = st.slider(
+    "Correlation cutoff (ρ)",
+    0.00,   # min
+    1.00,   # max
+    0.00,   # default (0 = no filter)
+    0.05,   # step
+    format="%.2f",
+)
+
 
 ###############################################################################
 # Helper functions
@@ -171,7 +174,7 @@ if current_year not in ytd_df.columns:
 # Correlation ranking
 ###############################################################################
 current_ytd = ytd_df[current_year].dropna()
-correlations: dict[int, float] = {}
+correlations = {}
 
 for year in ytd_df.columns:
     if year == current_year:
@@ -183,8 +186,20 @@ for year in ytd_df.columns:
     rho = np.corrcoef(current_ytd[:overlap], past_ytd[:overlap])[0, 1]
     correlations[year] = rho
 
-top_matches = sorted(correlations.items(), key=lambda kv: kv[1],
-                     reverse=True)[:top_n]
+# ▶︎ Apply cutoff
+filtered_corr = {
+    yr: rho for yr, rho in correlations.items()
+    if rho >= min_corr        # <-- uses the slider value
+}
+
+top_matches = sorted(filtered_corr.items(),
+                     key=lambda kv: kv[1],
+                     reverse=True)[: top_n]
+
+# Optional guard if nothing survives
+if not top_matches:
+    st.warning("No historical years meet the correlation cutoff.")
+    st.stop()
 
 ###############################################################################
 # Display top matches
