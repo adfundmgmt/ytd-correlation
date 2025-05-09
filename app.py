@@ -1,24 +1,22 @@
-import streamlit as st
 import yfinance as yf
 import pandas as pd
 import numpy as np
-import datetime
+import streamlit as st
 import matplotlib.pyplot as plt
-from matplotlib.ticker import MultipleLocator, FuncFormatter
+import datetime
 
-# Must be FIRST Streamlit command
+# Set Streamlit page configuration
 st.set_page_config(page_title="YTD Correlation Dashboard", layout="wide")
 
+# Sidebar instructions
 with st.sidebar:
     st.title("📘 How to Use This Tool")
-
     st.markdown("""
-This dashboard compares the **current year-to-date (YTD) performance** of a chosen ticker (e.g., S&P 500 or Nasdaq) with prior years, based on **correlation of daily return paths**.
+This dashboard compares the **current year-to-date (YTD) performance** of a chosen ticker with prior years, based on **correlation of daily return paths**.
 
 ---
 
 ### 🔧 Steps:
-
 1. **Enter a ticker**  
    Examples:
    - `^GSPC` (S&P 500)
@@ -26,107 +24,119 @@ This dashboard compares the **current year-to-date (YTD) performance** of a chos
    - `AAPL`, `TSLA`, etc.
 
 2. **Adjust the Top N slider**  
-   This selects how many past years to overlay based on similarity to the current year.
+   Choose how many analog years to show.
 
 3. **Interpret the chart**  
-   - **Black line** = current year's YTD path  
-   - **Dashed lines** = top correlated historical years  
-   - **Legend** shows correlation coefficients (ρ)
+   - **Black line** = current YTD  
+   - **Dashed lines** = top correlated years  
+   - **Legend** shows correlation ρ (Pearson)
 
 ---
 
-### 💡 Tip:
-This tool is useful for:
-- Identifying analog years
-- Market narrative framing
-- Backtesting
+### 💡 Use Cases:
+- Analog-based market playbooks
+- Historical quant framing
+- Macro and technical overlays
 
 Developed by **AD Fund Management LP**.
 """)
 
+# User input
 st.title("📈 YTD Analog Year Correlation Explorer")
-
-# === Inputs ===
-ticker = st.text_input("Enter ticker symbol (e.g. ^GSPC, ^IXIC, AAPL)", value="^GSPC").upper()
+ticker = st.text_input("Enter ticker symbol (e.g. ^GSPC, ^IXIC, AAPL)", "^GSPC")
 top_n = st.slider("Top N analog years to show", 1, 10, 5)
 
-@st.cache_data
-def fetch_data(ticker):
-    df = yf.download(ticker, start="1980-01-01", auto_adjust=False)
-    if isinstance(df.columns, pd.MultiIndex):
-        df = df.xs(ticker, axis=1, level=1, drop_level=True)
-    df = df[['Close']].dropna()
-    df['Year'] = df.index.year
-    return df
+# Download historical data
+hist = yf.download(ticker, start="1980-01-01", auto_adjust=False, progress=False)
+hist = hist[['Close']].dropna()
+hist['Year'] = hist.index.year
+hist['DOY'] = hist.index.dayofyear
 
-# === Data Fetching & Validation ===
-try:
-    data = fetch_data(ticker)
-except:
-    st.error("Failed to download data. Check ticker symbol.")
-    st.stop()
-
-# === YTD Return Matrix Calculation ===
+# Compute YTD return curves
 ytd_returns_by_year = {}
-for year, group in data.groupby('Year'):
+for year, group in hist.groupby('Year'):
     if len(group) < 30:
         continue
-    try:
-        start_price = group['Close'].iloc[0]
-        ytd = (group['Close'] / start_price) - 1
-        ytd.index = group.index.dayofyear
-        if ytd.isnull().any() or ytd.size < 30:
-            continue
-        ytd_returns_by_year[year] = ytd
-    except:
-        continue
+    start_price = group.iloc[0]['Close']
+    ytd_returns = group['Close'] / start_price - 1
+    ytd_returns.index = group['DOY']
+    if isinstance(ytd_returns, pd.Series) and ytd_returns.notna().sum() > 30:
+        ytd_returns_by_year[year] = ytd_returns
 
+# Assemble matrix
 ytd_df = pd.DataFrame(ytd_returns_by_year)
 current_year = datetime.datetime.now().year
-
 if current_year not in ytd_df.columns:
-    st.warning(f"No valid YTD data for {current_year}")
-    st.stop()
+    raise ValueError(f"No YTD data available for {current_year}")
 
 current_ytd = ytd_df[current_year].dropna()
 correlations = {}
-
 for year in ytd_df.columns:
     if year == current_year:
         continue
-    past_ytd = ytd_df[year].dropna()
-    min_len = min(len(current_ytd), len(past_ytd))
+    other = ytd_df[year].dropna()
+    min_len = min(len(current_ytd), len(other))
     if min_len < 30:
         continue
-    corr = np.corrcoef(current_ytd[:min_len], past_ytd[:min_len])[0, 1]
-    correlations[year] = corr
+    correlations[year] = np.corrcoef(current_ytd[:min_len], other[:min_len])[0, 1]
 
-# === Top Analog Matches ===
 top_matches = sorted(correlations.items(), key=lambda x: x[1], reverse=True)[:top_n]
 
-st.subheader(f"Top {top_n} most correlated years to {current_year}")
-for year, corr in top_matches:
-    st.write(f"**{year}**: ρ = {corr:.4f}")
+# Show top correlations
+st.markdown(f"""
+### 📊 Top {top_n} Historical Analogs to **{current_year} YTD**
+These years had the most similar return profiles so far. Use them to frame expectations, market setups, or macro parallels.
+""")
 
-# === Plotting ===
-fig, ax = plt.subplots(figsize=(14, 7))
-days_current = list(range(1, len(current_ytd) + 1))
-ax.plot(days_current, current_ytd, label=f"{current_year} (YTD)", linewidth=3, color='black')
+cols = st.columns(len(top_matches))
+for i, (year, corr) in enumerate(top_matches):
+    with cols[i]:
+        st.metric(label=f"**{year}**", value=f"{corr:.2f}", delta="ρ", delta_color="off")
 
-for year, corr in top_matches:
-    analog = ytd_df[year].dropna()
-    ax.plot(analog.index, analog.values, linestyle='--', linewidth=1.8, label=f"{year} (ρ={corr:.2f})")
+# Full-year return function
+def get_full_year_return(ticker, year):
+    try:
+        df = yf.download(ticker, start=f"{year}-01-01", end=f"{year}-12-31", progress=False)
+        start_price = df['Close'].iloc[0]
+        end_price = df['Close'].iloc[-1]
+        return (end_price / start_price - 1) * 100
+    except:
+        return None
 
-ax.set_title(f"{ticker} YTD ({current_year}) vs Full-Year Analogs", fontsize=15)
-ax.set_xlabel("Trading Day of Year")
-ax.set_ylabel("Cumulative Return")
-ax.axhline(0, color='gray', linestyle='--', linewidth=1)
-ax.set_xlim(1, 253)
-ax.grid(True, linestyle=':', linewidth=0.6)
-ax.legend(loc="upper left", fontsize=9)
+# Commentary
+best_year = top_matches[0][0]
+best_corr = top_matches[0][1]
+analog_return = get_full_year_return(ticker, best_year)
 
-# Format Y-axis nicely
-ax.yaxis.set_major_locator(MultipleLocator(0.05))
-ax.yaxis.set_major_formatter(FuncFormatter(lambda y, _: f'{y:.0%}'))
+insight = f"""
+> 🧠 **{best_year}** stands out as the closest YTD analog to **{current_year}**, with a correlation of **{best_corr:.2f}**.
+"""
+if analog_return is not None:
+    insight += f" That year ended with a total return of **{analog_return:.1f}%**."
+insight += "\n\n> Use this as a framing tool for positioning, or scroll below to compare full-year return paths visually."
 
-st.pyplot(fig)
+st.markdown(insight)
+
+# CSV export
+export_df = pd.DataFrame(top_matches[:top_n], columns=["Year", "Correlation"])
+csv = export_df.to_csv(index=False).encode("utf-8")
+st.download_button("📥 Export Analog Years to CSV", csv, f"top_{top_n}_analogs_{ticker}_{current_year}.csv", "text/csv")
+
+# Plot full-year overlays
+st.subheader(f"📈 Full-Year Performance: {current_year} vs. Top Analogs")
+plt.figure(figsize=(14, 7))
+plt.plot(current_ytd.values, label=f"{current_year} (YTD)", color="black", linewidth=2)
+
+for year, _ in top_matches:
+    if year in ytd_df.columns:
+        full_series = ytd_df[year]
+        plt.plot(full_series.values, label=f"{year}", linestyle='--')
+
+plt.axhline(0, color='gray', linestyle='--')
+plt.xlabel("Trading Day of Year")
+plt.ylabel("Return")
+plt.title(f"{ticker.upper()} — YTD and Analog Years ({current_year})")
+plt.legend()
+plt.grid(True, linestyle=":", linewidth=0.5)
+st.pyplot(plt)
+
