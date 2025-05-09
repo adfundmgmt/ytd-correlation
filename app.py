@@ -33,8 +33,8 @@ This dashboard compares the **current year-to-date (YTD) performance** of a chos
 This tool is useful for:
 - Identifying analog years
 - Market narrative framing
-- Quant backtesting
-- LP updates with historical context
+- Backtesting
+
 
 Developed by **AD Fund Management**.
 """)
