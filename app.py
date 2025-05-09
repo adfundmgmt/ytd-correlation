@@ -66,8 +66,9 @@ for year, group in hist.groupby('Year'):
 # Assemble matrix
 ytd_df = pd.DataFrame(ytd_returns_by_year)
 current_year = datetime.datetime.now().year
-if current_year not in ytd_df.columns:
-    raise ValueError(f"No YTD data available for {current_year}")
+if current_year not in ytd_df.columns or ytd_df[current_year].dropna().empty:
+    st.warning(f"No YTD return data found for **{ticker.upper()}** in {current_year}. Try a different symbol (e.g. ^GSPC or AAPL).")
+    st.stop()
 
 current_ytd = ytd_df[current_year].dropna()
 correlations = {}
