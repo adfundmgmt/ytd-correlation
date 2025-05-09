@@ -1,4 +1,44 @@
 import streamlit as st
+
+# Page and Sidebar Setup
+st.set_page_config(page_title="YTD Correlation Dashboard", layout="wide")
+
+with st.sidebar:
+    st.title("📘 How to Use This Tool")
+
+    st.markdown("""
+This dashboard compares the **current year-to-date (YTD) performance** of a chosen ticker (e.g., S&P 500 or Nasdaq) with prior years, based on **correlation of daily return paths**.
+
+---
+
+### 🔧 Steps:
+
+1. **Enter a ticker**  
+   Examples:
+   - `^GSPC` (S&P 500)
+   - `^IXIC` (Nasdaq Composite)
+   - `AAPL`, `TSLA`, etc.
+
+2. **Adjust the Top N slider**  
+   This selects how many past years to overlay based on similarity to the current year.
+
+3. **Interpret the chart**  
+   - **Black line** = current year's YTD path  
+   - **Dashed lines** = top correlated historical years  
+   - **Legend** shows correlation coefficients (ρ)
+
+---
+
+### 💡 Tip:
+This tool is useful for:
+- Identifying analog years
+- Market narrative framing
+- Quant backtesting
+- LP updates with historical context
+
+Developed by **AD Fund Management**.
+""")
+
 import yfinance as yf
 import pandas as pd
 import numpy as np
